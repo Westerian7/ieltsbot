@@ -16,7 +16,7 @@ def health_check():
     return {"status": "IELTS Bot is online"}
 
 # Bot Configuration
-BOT_TOKEN = "YOUR_BOT_TOKEN"  # Replace with your token
+BOT_TOKEN = "7799617257:AAG6mp9kM2GRiT8O5HYlB_J0cG2zrBEx_x4"  # Replace with your token
 
 def load_questions():
     questions = {}
