@@ -18,7 +18,7 @@ def health_check():
 # ======================
 # Telegram Bot Core
 # ======================
-BOT_TOKEN = os.getenv("BOT_TOKEN")  # Set in Render environment variables
+BOT_TOKEN = os.getenv("7799617257:AAG6mp9kM2GRiT8O5HYlB_J0cG2zrBEx_x4")  # Set in Render environment variables
 
 def load_questions():
     """Load questions from text files"""
