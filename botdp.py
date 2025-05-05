@@ -1,106 +1,120 @@
 import random
 import os
+import threading
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    CallbackQueryHandler,
-    ContextTypes,
-)
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from fastapi import FastAPI
+import uvicorn
 
-# Bot Token (replace if needed)
-BOT_TOKEN = "7799617257:AAG6mp9kM2GRiT8O5HYlB_J0cG2zrBEx_x4"
+# ======================
+# FastAPI Health Check
+# ======================
+app = FastAPI()
 
-# Load questions from text files
+@app.get("/")
+def health_check():
+    return {"status": "IELTS Bot is online", "telegram": "active"}
+
+# ======================
+# Telegram Bot Core
+# ======================
+BOT_TOKEN = os.getenv("BOT_TOKEN")  # Set in Render environment variables
+
 def load_questions():
-    """Load questions from part1_questions.txt, part2_questions.txt, part3_questions.txt"""
+    """Load questions from text files"""
     questions = {}
     try:
-        with open("part1_questions.txt", "r", encoding="utf-8") as f:
-            questions['part1'] = [line.strip() for line in f if line.strip()]
+        question_files = {
+            'part1': 'part1_questions.txt',
+            'part2': 'part2_questions.txt', 
+            'part3': 'part3_questions.txt'
+        }
         
-        with open("part2_questions.txt", "r", encoding="utf-8") as f:
-            questions['part2'] = [line.strip() for line in f if line.strip()]
-        
-        with open("part3_questions.txt", "r", encoding="utf-8") as f:
-            questions['part3'] = [line.strip() for line in f if line.strip()]
-            
+        for part, filename in question_files.items():
+            with open(filename, 'r', encoding='utf-8') as f:
+                questions[part] = [line.strip() for line in f if line.strip()]
         return questions
-    except FileNotFoundError as e:
-        print(f"❌ Error loading question files: {e}")
+        
+    except Exception as e:
+        print(f"⚠️ Error loading questions: {e}")
         return None
 
-# Load questions at startup
 questions = load_questions()
 
-# Command: /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not questions:
-        await update.message.reply_text("❌ Failed to load questions. Check if files exist!")
+        await update.message.reply_text("❌ Question database not loaded")
         return
     
     keyboard = [
-        [InlineKeyboardButton("🎤 Part 1", callback_data='part1')],
-        [InlineKeyboardButton("🗣️ Part 2", callback_data='part2')],
-        [InlineKeyboardButton("💬 Part 3", callback_data='part3')],
-        [InlineKeyboardButton("📝 Full Test", callback_data='full')]
+        [InlineKeyboardButton("🎤 Part 1", callback_data='part1'),
+         InlineKeyboardButton("🗣️ Part 2", callback_data='part2')],
+        [InlineKeyboardButton("💬 Part 3", callback_data='part3'),
+         InlineKeyboardButton("📝 Full Test", callback_data='full')]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    
     await update.message.reply_text(
-        "📚 IELTS Speaking Bot\nChoose a question type:",
-        reply_markup=reply_markup
+        "📚 IELTS Speaking Practice\nChoose a question type:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-# Handle button clicks
 async def handle_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
     if not questions:
-        await query.edit_message_text("❌ Questions not loaded. Check server logs.")
+        await query.edit_message_text("❌ Questions not available")
         return
     
     try:
         if query.data == 'part1':
-            response = "🎤 **Part 1 Question:**\n\n" + random.choice(questions['part1'])
+            response = f"🎤 Part 1 Question:\n\n{random.choice(questions['part1'])}"
         elif query.data == 'part2':
-            response = "🗣️ **Part 2 Question:**\n\n" + random.choice(questions['part2'])
+            response = f"🗣️ Part 2 Question:\n\n{random.choice(questions['part2'])}"
         elif query.data == 'part3':
-            response = "💬 **Part 3 Question:**\n\n" + random.choice(questions['part3'])
+            response = f"💬 Part 3 Question:\n\n{random.choice(questions['part3'])}"
         elif query.data == 'full':
             response = (
-                "📚 **Full IELTS Speaking Test**\n\n"
-                "🎤 **Part 1:**\n" + random.choice(questions['part1']) + "\n\n"
-                "🗣️ **Part 2:**\n" + random.choice(questions['part2']) + "\n\n"
-                "💬 **Part 3:**\n" + random.choice(questions['part3'])
+                "📚 Full IELTS Test\n\n"
+                f"🎤 Part 1:\n{random.choice(questions['part1'])}\n\n"
+                f"🗣️ Part 2:\n{random.choice(questions['part2'])}\n\n"
+                f"💬 Part 3:\n{random.choice(questions['part3'])}"
             )
         
-        # Add action buttons
         keyboard = [
-            [InlineKeyboardButton("🔄 New Question", callback_data=query.data)],
-            [InlineKeyboardButton("🏠 Main Menu", callback_data='menu')]
+            [InlineKeyboardButton("🔄 New Question", callback_data=query.data),
+             InlineKeyboardButton("🏠 Menu", callback_data='menu')]
         ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(response, reply_markup=reply_markup)
-    
+        
+        await query.edit_message_text(
+            response,
+            reply_markup=InlineKeyboardMarkup(keyboard))
+            
     except Exception as e:
         await query.edit_message_text(f"⚠️ Error: {str(e)}")
 
-# Main function
-def main():
-    print("🤖 IELTS Speaking Bot is starting...")
-    
-    # Create Application
+# ======================
+# Server Management
+# ======================
+def run_fastapi():
+    """Run the health check server"""
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+def run_bot():
+    """Run the Telegram bot"""
     application = Application.builder().token(BOT_TOKEN).build()
-    
-    # Add handlers
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CallbackQueryHandler(handle_query, pattern='^(part1|part2|part3|full)$'))
-    application.add_handler(CallbackQueryHandler(start, pattern='^menu$'))
-    
-    # Start polling
-    print("✅ Bot is now running! Press Ctrl+C to stop.")
+    application.add_handler(CallbackQueryHandler(handle_query, pattern='^(part1|part2|part3|full|menu)$'))
     application.run_polling()
 
+# ======================
+# Main Execution
+# ======================
 if __name__ == '__main__':
-    main()
+    print("🚀 Starting IELTS Speaking Bot...")
+    
+    # Start health check in background thread
+    threading.Thread(target=run_fastapi, daemon=True).start()
+    
+    # Start Telegram bot in main thread
+    run_bot()
