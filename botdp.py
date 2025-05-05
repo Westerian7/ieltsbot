@@ -1,32 +1,42 @@
 import random
 import os
 import threading
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from datetime import datetime
 from fastapi import FastAPI
 import uvicorn
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 # ======================
 # FastAPI Health Check
 # ======================
 app = FastAPI()
+start_time = datetime.now()
 
 @app.get("/")
 def health_check():
-    return {"status": "IELTS Bot is online", "telegram": "active"}
+    return {
+        "status": "IELTS Bot is online",
+        "uptime": str(datetime.now() - start_time),
+        "telegram": "active"
+    }
 
 # ======================
-# Telegram Bot Core
+# Telegram Bot Config
 # ======================
-BOT_TOKEN = os.getenv("7799617257:AAG6mp9kM2GRiT8O5HYlB_J0cG2zrBEx_x4")  # Set in Render environment variables
+# WARNING: This is a TEST token - revoke it after use!
+BOT_TOKEN = "7799617257:AAG6mp9kM2GRiT8O5HYlB_J0cG2zrBEx_x4"
 
+# ======================
+# Question Loader
+# ======================
 def load_questions():
-    """Load questions from text files"""
+    """Load questions from text files in same directory"""
     questions = {}
     try:
         question_files = {
             'part1': 'part1_questions.txt',
-            'part2': 'part2_questions.txt', 
+            'part2': 'part2_questions.txt',
             'part3': 'part3_questions.txt'
         }
         
@@ -36,11 +46,14 @@ def load_questions():
         return questions
         
     except Exception as e:
-        print(f"⚠️ Error loading questions: {e}")
+        print(f"❌ Error loading questions: {e}")
         return None
 
 questions = load_questions()
 
+# ======================
+# Telegram Handlers
+# ======================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not questions:
         await update.message.reply_text("❌ Question database not loaded")
@@ -56,8 +69,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📚 IELTS Speaking Practice\nChoose a question type:",
         reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-
+        
 async def handle_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -96,12 +108,12 @@ async def handle_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ======================
 # Server Management
 # ======================
-def run_fastapi():
-    """Run the health check server"""
+def run_server():
+    """Run FastAPI for health checks"""
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 def run_bot():
-    """Run the Telegram bot"""
+    """Start the Telegram bot"""
     application = Application.builder().token(BOT_TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(handle_query, pattern='^(part1|part2|part3|full|menu)$'))
@@ -111,10 +123,10 @@ def run_bot():
 # Main Execution
 # ======================
 if __name__ == '__main__':
-    print("🚀 Starting IELTS Speaking Bot...")
+    print("🚀 IELTS Speaking Bot Starting...")
     
-    # Start health check in background thread
-    threading.Thread(target=run_fastapi, daemon=True).start()
+    # Start health check server in background
+    threading.Thread(target=run_server, daemon=True).start()
     
-    # Start Telegram bot in main thread
+    # Start Telegram bot
     run_bot()
