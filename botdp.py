@@ -24,7 +24,7 @@ def health_check():
 # ======================
 # Telegram Bot Config
 # ======================
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"  # Replace with your actual token
+BOT_TOKEN = "7799617257:AAG6mp9kM2GRiT8O5HYlB_J0cG2zrBEx_x4"  # Replace with your actual token
 
 def load_questions():
     questions = {}
