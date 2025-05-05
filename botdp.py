@@ -24,8 +24,7 @@ def health_check():
 # ======================
 # Telegram Bot Config
 # ======================
-# WARNING: This is a TEST token - revoke it after use!
-BOT_TOKEN = "7799617257:AAG6mp9kM2GRiT8O5HYlB_J0cG2zrBEx_x4"
+BOT_TOKEN = "7799617257:AAG6mp9kM2GRiT8O5HYlB_J0cG2zrBEx_x4"  # Replace with your token
 
 # ======================
 # Question Loader
@@ -36,7 +35,7 @@ def load_questions():
     try:
         question_files = {
             'part1': 'part1_questions.txt',
-            'part2': 'part2_questions.txt',
+            'part2': 'part2_questions.txt', 
             'part3': 'part3_questions.txt'
         }
         
