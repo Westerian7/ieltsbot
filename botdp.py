@@ -45,9 +45,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     keyboard = [
-        [InlineKeyboardButton("🎤 Part 1", callback_data='part1')],
-        [InlineKeyboardButton("🗣️ Part 2", callback_data='part2')],
-        [InlineKeyboardButton("💬 Part 3", callback_data='part3')],
+        [InlineKeyboardButton("1️⃣ Part 1", callback_data='part1')],
+        [InlineKeyboardButton("2️⃣ Part 2", callback_data='part2')],
+        [InlineKeyboardButton("3️⃣ Part 3", callback_data='part3')],
         [InlineKeyboardButton("📝 Full Test", callback_data='full')]
     ]
     
