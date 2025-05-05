@@ -7,7 +7,9 @@ import uvicorn
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# FastAPI Setup
+# ======================
+# FastAPI Health Check
+# ======================
 app = FastAPI()
 start_time = datetime.now()
 
@@ -19,8 +21,10 @@ def health_check():
         "telegram": "active"
     }
 
-# Bot Configuration
-BOT_TOKEN = "7799617257:AAG6mp9kM2GRiT8O5HYlB_J0cG2zrBEx_x4"  # Replace with your actual token
+# ======================
+# Telegram Bot Config
+# ======================
+BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"  # Replace with your actual token
 
 def load_questions():
     questions = {}
@@ -71,6 +75,7 @@ async def handle_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text(
                 "📚 IELTS Speaking Practice\nChoose a question type:",
                 reply_markup=InlineKeyboardMarkup(keyboard)
+            )
             return
             
         if query.data == 'part1':
